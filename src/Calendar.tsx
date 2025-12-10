@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function WechselmodellCalendarGenerator() {
   const [intervalString, setIntervalString] = useState("2-3-2");
@@ -39,7 +39,7 @@ export default function WechselmodellCalendarGenerator() {
       const title = isDaniel ? "Daniel" : "Zuhause";
       const uid = `${blockStart.getTime()}-${idx}@wechselmodell`;
 
-      const formatDate = (d) =>
+      const formatDate = (d: Date) =>
         d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
       ics +=
