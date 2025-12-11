@@ -15,12 +15,12 @@ app.use(express.json());
 const calFolder = path.join(__dirname, "cal");
 if (!fs.existsSync(calFolder)) fs.mkdirSync(calFolder);
 
-// **Dateiname sicher machen**
+// Sicheren Dateinamen erzeugen
 function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// **ICS Generator**
+// ICS Generator
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -54,17 +54,12 @@ BEGIN:VCALENDAR
 VERSION:2.0
 CALSCALE:GREGORIAN
 PRODID:-//Wechselmodell//Calendar//DE
-X-WR-CALNAME:${calendarName}
-X-WR-CALDESC:Wechselmodell Kalender "${calendarName}"
-X-WR-TIMEZONE:Europe/Berlin
 ${events}
 END:VCALENDAR
   `.trim();
 }
 
-// ======================
-// API ENDPOINT
-// ======================
+// API → ICS erzeugen
 app.post("/api/createCalendar", (req, res) => {
   const { startDate, intervals, startWith, calendarId } = req.body;
 
@@ -72,10 +67,10 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  // Nutzerdefinierte Kalender-ID → Dateiname übernehmen
+  // Entweder benutzerdefinierter Name oder zufälliger
   const id =
     calendarId && calendarId.trim() !== ""
-      ? sanitizeFilename(calendarId.trim())
+      ? sanitizeFilename(calendarId)
       : Math.random().toString(36).substring(2, 12);
 
   const icsContent = generateICS({
@@ -96,23 +91,25 @@ app.post("/api/createCalendar", (req, res) => {
   });
 });
 
-// ======================
-// STATIC + REACT FALLBACK
-// ======================
+// ---------- Production React Build ----------
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "dist");
 
+  // React Build
   app.use(express.static(distPath));
-  app.use("/cal", express.static(calFolder)); // wichtig!
 
-  // React Router Fallback
-  app.get("*", (req, res) => {
+  // ICS Ordner öffentlich
+  app.use("/cal", express.static(calFolder));
+
+  // React Router fallback (Express 5 kompatibel, kein "*")
+  app.use((req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 } else {
-  console.log("Entwicklung: bitte Vite Dev Server starten");
+  console.log("Entwicklung: Vite separat starten (npm run dev)");
 }
 
+// Start Server
 app.listen(port, () => {
   console.log(`Server läuft auf Port ${port}, NODE_ENV=${process.env.NODE_ENV}`);
 });
