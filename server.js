@@ -55,8 +55,13 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(distPath));
 
   // React Router Catch-All
-  app.get("/*", (req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
+  app.use((req, res, next) => {
+    // Nur HTML ausliefern, keine API oder /cal/ Anfragen überschreiben
+    if (!req.path.startsWith("/api") && !req.path.startsWith("/cal") && !req.path.includes(".")) {
+      res.sendFile(path.join(distPath, "index.html"));
+    } else {
+      next();
+    }
   });
 } else {
   console.log("Entwicklung: bitte Vite dev server separat starten (npm run dev)");
