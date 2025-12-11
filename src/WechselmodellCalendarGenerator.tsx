@@ -18,9 +18,7 @@ export default function WechselmodellCalendarGenerator() {
     setMessage("⏳ Erstelle Kalender...");
 
     const body: any = { startDate, intervals: intervalString, startWith: startType };
-    if (calendarId.trim() !== "") body.calendarId = calendarId.trim();
-
-    console.log("POST Body:", body); // zum Debuggen
+    if (calendarId.trim() !== "") body.calendarId = calendarId.trim(); // sendet den Namen an den Server
 
     try {
       const res = await fetch("/api/createCalendar", {
@@ -38,7 +36,7 @@ export default function WechselmodellCalendarGenerator() {
       // Webcal-Link direkt öffnen
       window.location.href = `webcal://${host}${port ? `:${port}` : ""}/cal/${data.id}.ics`;
 
-      setMessage("✅ Kalender erfolgreich erstellt!");
+      setMessage(`✅ Kalender erfolgreich erstellt: ${calendarId || data.id}`);
     } catch (err: any) {
       setMessage(err.message.includes("Failed to fetch")
         ? "❌ Server nicht erreichbar."
