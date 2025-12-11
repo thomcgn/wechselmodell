@@ -1,17 +1,20 @@
-const express = require("express");
-const path = require("path");
-const fs = require("fs");
+import express from "express";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+// __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-// --------------------
 // Middleware
-// --------------------
 app.use(express.json());
 
 // --------------------
-// API Endpoint: Kalender erstellen
+// API: Kalender erstellen
 // --------------------
 app.post("/api/createCalendar", (req, res) => {
   const { startDate, intervals, startWith } = req.body;
@@ -21,9 +24,7 @@ app.post("/api/createCalendar", (req, res) => {
 
   const id = Math.random().toString(36).substring(2, 12);
 
-  // ICS Inhalt generieren
-  const icsContent = `
-BEGIN:VCALENDAR
+  const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Wechselmodell Planer//DE
 BEGIN:VEVENT
@@ -31,15 +32,12 @@ UID:${id}
 DTSTART;VALUE=DATE:${startDate.replace(/-/g, "")}
 SUMMARY:Wechselmodell ${startWith}
 END:VEVENT
-END:VCALENDAR
-`.trim();
+END:VCALENDAR`;
 
-  // Pfad zum Speichern
   const calDir = path.join(__dirname, "cal");
   if (!fs.existsSync(calDir)) fs.mkdirSync(calDir, { recursive: true });
 
-  const calPath = path.join(calDir, `${id}.ics`);
-  fs.writeFileSync(calPath, icsContent);
+  fs.writeFileSync(path.join(calDir, `${id}.ics`), icsContent);
 
   res.json({
     id,
@@ -48,7 +46,7 @@ END:VCALENDAR
 });
 
 // --------------------
-// Produktion: statische React-Dateien ausliefern
+// React Production Build ausliefern
 // --------------------
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "dist");
