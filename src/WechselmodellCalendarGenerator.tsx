@@ -18,7 +18,7 @@ export default function WechselmodellCalendarGenerator() {
     setMessage("⏳ Erstelle Kalender...");
 
     const body: any = { startDate, intervals: intervalString, startWith: startType };
-    if (calendarId.trim() !== "") body.calendarId = calendarId.trim(); // sendet den Namen an den Server
+    if (calendarId.trim() !== "") body.calendarId = calendarId.trim();
 
     try {
       const res = await fetch("/api/createCalendar", {
@@ -30,13 +30,16 @@ export default function WechselmodellCalendarGenerator() {
       if (!res.ok) throw new Error(`Fehler beim Erstellen des Kalenders (${res.status})`);
 
       const data = await res.json();
-      const host = window.location.hostname;
-      const port = window.location.port;
 
       // Webcal-Link direkt öffnen
-      window.location.href = `webcal://${host}${port ? `:${port}` : ""}/cal/${data.id}.ics`;
+      const host = window.location.hostname;
+      const port = window.location.port ? `:${window.location.port}` : "";
+      const webcalUrl = `webcal://${host}${port}/cal/${data.id}.ics`;
 
-      setMessage(`✅ Kalender erfolgreich erstellt: ${calendarId || data.id}`);
+      // iPhone/Android: öffnet Kalender-App direkt
+      window.location.href = webcalUrl;
+
+      setMessage(`✅ Kalender erfolgreich erstellt! (${webcalUrl})`);
     } catch (err: any) {
       setMessage(err.message.includes("Failed to fetch")
         ? "❌ Server nicht erreichbar."
@@ -97,7 +100,7 @@ export default function WechselmodellCalendarGenerator() {
             onChange={(e) => setCalendarId(e.target.value)}
             fullWidth
             margin="normal"
-            helperText="Name für die ICS-Datei, z.B. motti"
+            helperText="Name für die ICS-Datei / Kalendername, z.B. motti"
           />
 
           <Button
