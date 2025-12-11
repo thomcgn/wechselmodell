@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 
 // __dirname in ESM
@@ -16,15 +17,25 @@ const port = process.env.PORT || 3001;
 app.use(express.json());
 
 // --------------------
+// Funktion: Namhafte ID erzeugen
+// --------------------
+function generateCalendarId(startDate, intervals, startWith) {
+  const str = `${startDate}-${intervals}-${startWith}`;
+  // SHA1 hash + erste 10 Zeichen → URL-freundlich
+  return crypto.createHash("sha1").update(str).digest("hex").substring(0, 10);
+}
+
+// --------------------
 // API: Kalender erstellen
 // --------------------
 app.post("/api/createCalendar", (req, res) => {
-  const { startDate, intervals, startWith } = req.body;
+  const { startDate, intervals, startWith, calendarId } = req.body;
   if (!startDate || !intervals || !startWith) {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  const id = Math.random().toString(36).substring(2, 12);
+  // Namhafte ID oder manuell gewählte ID
+  const id = calendarId || generateCalendarId(startDate, intervals, startWith);
 
   // Intervall-basiert mehrtägige VEVENTs erstellen
   const start = new Date(startDate);
@@ -62,7 +73,8 @@ END:VCALENDAR`;
   // ICS Datei speichern
   const calDir = path.join(__dirname, "cal");
   if (!fs.existsSync(calDir)) fs.mkdirSync(calDir, { recursive: true });
-  fs.writeFileSync(path.join(calDir, `${id}.ics`), icsContent);
+  const icsPath = path.join(calDir, `${id}.ics`);
+  fs.writeFileSync(icsPath, icsContent);
 
   // HTTPS URL zurückgeben
   const host = req.headers.host;
