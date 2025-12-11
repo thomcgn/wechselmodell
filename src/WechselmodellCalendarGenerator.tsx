@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Box, Card, CardContent, TextField, MenuItem, Button, Typography } from "@mui/material";
-import "./WechselmodellCalendarGenerator.css";
 
 export default function WechselmodellCalendarGenerator() {
   const [intervalString, setIntervalString] = useState("2-3-2");
   const [startType, setStartType] = useState("Daniel");
   const [startDate, setStartDate] = useState("");
-  const [calendarId, setCalendarId] = useState("");
+  const [calendarId, setCalendarId] = useState(""); // optional
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -14,15 +13,7 @@ export default function WechselmodellCalendarGenerator() {
   const canSubmit = startDate !== "" && isIntervalValid(intervalString) && !loading;
 
   const generateICS = async () => {
-    if (!startDate) {
-      setMessage("⚠ Bitte wähle ein Startdatum aus!");
-      return;
-    }
-    if (!isIntervalValid(intervalString)) {
-      setMessage("⚠ Intervalle müssen nur Zahlen durch Bindestriche getrennt sein, z.B. 2-3-2");
-      return;
-    }
-
+    if (!canSubmit) return;
     setLoading(true);
     setMessage("⏳ Erstelle Kalender...");
 
@@ -37,10 +28,11 @@ export default function WechselmodellCalendarGenerator() {
       });
 
       if (!res.ok) throw new Error(`Fehler beim Erstellen des Kalenders (${res.status})`);
-      const data = await res.json();
 
+      const data = await res.json();
       const host = window.location.hostname;
       const port = window.location.port;
+
       window.location.href = `webcal://${host}${port ? `:${port}` : ""}/cal/${data.id}.ics`;
 
       setMessage("✅ Kalender erfolgreich erstellt!");
@@ -54,19 +46,25 @@ export default function WechselmodellCalendarGenerator() {
   };
 
   return (
-    <Box className="calendar-container">
-      <Card className="calendar-card">
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        p: 2,
+        bgcolor: "#f5f5f5"
+      }}
+    >
+      <Card sx={{ width: "100%", maxWidth: 400, p: 2 }}>
         <CardContent>
-          <Typography variant="h5" align="center" gutterBottom>
-            Wechselmodell Kalender
-          </Typography>
+          <Typography variant="h5" mb={2}>Wechselmodell Kalender</Typography>
 
           <TextField
             label="Startdatum"
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
             fullWidth
             margin="normal"
           />
@@ -75,10 +73,9 @@ export default function WechselmodellCalendarGenerator() {
             label="Intervalle"
             value={intervalString}
             onChange={(e) => setIntervalString(e.target.value)}
-            placeholder="z. B. 2-3-2"
+            helperText="Zahlen durch Bindestriche getrennt, z.B. 2-3-2"
             fullWidth
             margin="normal"
-            error={intervalString !== "" && !isIntervalValid(intervalString)}
           />
 
           <TextField
@@ -97,26 +94,29 @@ export default function WechselmodellCalendarGenerator() {
             label="Kalender-ID (optional)"
             value={calendarId}
             onChange={(e) => setCalendarId(e.target.value)}
-            placeholder="z. B. daniel-zuhause"
             fullWidth
             margin="normal"
+            helperText="Name für die ICS-Datei, z.B. motti"
           />
 
           <Button
             variant="contained"
             color="primary"
-            fullWidth
             onClick={generateICS}
             disabled={!canSubmit}
-            className="calendar-button"
+            fullWidth
+            sx={{ mt: 2 }}
           >
             {loading ? "Erstelle..." : "Abonnieren"}
           </Button>
 
           {message && (
             <Typography
-              align="center"
-              className={`calendar-message ${message.startsWith("❌") ? "error" : "success"}`}
+              sx={{
+                mt: 2,
+                fontWeight: "bold",
+                color: message.startsWith("❌") ? "red" : "green"
+              }}
             >
               {message}
             </Typography>

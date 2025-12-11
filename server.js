@@ -11,15 +11,13 @@ const port = process.env.PORT || 3001;
 
 app.use(express.json());
 
-// --------------------
-// Ordner für ICS-Dateien
-// --------------------
 const calFolder = path.join(__dirname, "cal");
 if (!fs.existsSync(calFolder)) fs.mkdirSync(calFolder);
 
-// --------------------
-// Hilfsfunktion: ICS-Datei generieren
-// --------------------
+function sanitizeFilename(name) {
+  return name.replace(/[^a-zA-Z0-9-_]/g, "-");
+}
+
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -58,9 +56,6 @@ END:VCALENDAR
   `.trim();
 }
 
-// --------------------
-// API Endpoint
-// --------------------
 app.post("/api/createCalendar", (req, res) => {
   const { startDate, intervals, startWith, calendarId } = req.body;
 
@@ -68,7 +63,12 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  const id = calendarId && calendarId.trim() !== "" ? calendarId.trim() : Math.random().toString(36).substring(2, 12);
+  const idRaw =
+    calendarId && calendarId.trim() !== ""
+      ? calendarId.trim()
+      : Math.random().toString(36).substring(2, 12);
+
+  const id = sanitizeFilename(idRaw);
   const icsContent = generateICS({ startDate, intervals, startWith, calendarName: id });
 
   const icsPath = path.join(calFolder, `${id}.ics`);
@@ -81,25 +81,18 @@ app.post("/api/createCalendar", (req, res) => {
 });
 
 // --------------------
-// Produktion: React ausliefern
+// React production
 // --------------------
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "dist");
-
-  // Statische Dateien
   app.use(express.static(distPath));
-
-  // React-Router Fallback
-  app.use((req, res, next) => {
+  app.use((req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 } else {
   console.log("Entwicklung: bitte separat Vite dev server starten (npm run dev)");
 }
 
-// --------------------
-// Server starten
-// --------------------
 app.listen(port, () => {
   console.log(`Server läuft auf Port ${port}, NODE_ENV=${process.env.NODE_ENV}`);
 });
