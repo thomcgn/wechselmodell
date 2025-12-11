@@ -26,24 +26,42 @@ app.post("/api/createCalendar", (req, res) => {
 
   const id = Math.random().toString(36).substring(2, 12);
 
+  // Intervalle verarbeiten
+  const start = new Date(startDate);
+  const intervalArr = intervals.split("-").map(Number);
+  let events = [];
+  let currentStart = new Date(start);
+  let currentPerson = startWith;
+
+  intervalArr.forEach((days, i) => {
+    const dt = currentStart.toISOString().split("T")[0].replace(/-/g, "");
+    events.push(`BEGIN:VEVENT
+UID:${id}-${i}
+DTSTART;VALUE=DATE:${dt}
+SUMMARY:Wechselmodell ${currentPerson}
+END:VEVENT`);
+
+    // Nächstes Startdatum berechnen
+    currentStart.setDate(currentStart.getDate() + days);
+    currentPerson = currentPerson === "Daniel" ? "Zuhause" : "Daniel";
+  });
+
   const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Wechselmodell Planer//DE
-BEGIN:VEVENT
-UID:${id}
-DTSTART;VALUE=DATE:${startDate.replace(/-/g, "")}
-SUMMARY:Wechselmodell ${startWith}
-END:VEVENT
+${events.join("\n")}
 END:VCALENDAR`;
 
+  // ICS Datei speichern
   const calDir = path.join(__dirname, "cal");
   if (!fs.existsSync(calDir)) fs.mkdirSync(calDir, { recursive: true });
-
   fs.writeFileSync(path.join(calDir, `${id}.ics`), icsContent);
 
+  // HTTPS URL zurückgeben
+  const host = req.headers.host;
   res.json({
     id,
-    url: `https://tildi.witchplease.de/cal/${id}.ics`,
+    url: `https://${host}/cal/${id}.ics`,
   });
 });
 
@@ -56,7 +74,6 @@ if (process.env.NODE_ENV === "production") {
 
   // React Router Catch-All
   app.use((req, res, next) => {
-    // Nur HTML ausliefern, keine API oder /cal/ Anfragen überschreiben
     if (!req.path.startsWith("/api") && !req.path.startsWith("/cal") && !req.path.includes(".")) {
       res.sendFile(path.join(distPath, "index.html"));
     } else {
