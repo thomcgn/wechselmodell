@@ -10,7 +10,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3001;
 
+// --------------------
 // Middleware
+// --------------------
 app.use(express.json());
 
 // --------------------
@@ -52,8 +54,8 @@ if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "dist");
   app.use(express.static(distPath));
 
-  // React-Router Support
-  app.get("*", (req, res) => {
+  // React Router Catch-All
+  app.get("/*", (req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 } else {
