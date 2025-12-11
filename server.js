@@ -51,10 +51,11 @@ END:VEVENT`);
     currentPerson = currentPerson === "Daniel" ? "Zuhause" : "Daniel";
   });
 
-  // ICS Inhalt zusammenstellen
+  // ICS Inhalt zusammenstellen mit Kalendernamen
   const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Wechselmodell Planer//DE
+X-WR-CALNAME:Wechselmodell Kalender
 ${events.join("\n")}
 END:VCALENDAR`;
 
