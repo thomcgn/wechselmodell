@@ -17,8 +17,13 @@ export default function WechselmodellCalendarGenerator() {
     setLoading(true);
     setMessage("⏳ Erstelle Kalender...");
 
-    const body: any = { startDate, intervals: intervalString, startWith: startType };
-    if (calendarId.trim() !== "") body.calendarId = calendarId.trim();
+    // Body für POST
+    const body: any = {
+      startDate,
+      intervals: intervalString,
+      startWith: startType,
+      calendarId: calendarId.trim() !== "" ? calendarId.trim() : undefined
+    };
 
     try {
       const res = await fetch("/api/createCalendar", {
@@ -30,16 +35,13 @@ export default function WechselmodellCalendarGenerator() {
       if (!res.ok) throw new Error(`Fehler beim Erstellen des Kalenders (${res.status})`);
 
       const data = await res.json();
-
-      // Webcal-Link direkt öffnen
       const host = window.location.hostname;
-      const port = window.location.port ? `:${window.location.port}` : "";
-      const webcalUrl = `webcal://${host}${port}/cal/${data.id}.ics`;
+      const port = window.location.port;
 
-      // iPhone/Android: öffnet Kalender-App direkt
-      window.location.href = webcalUrl;
+      // Webcal-Link öffnen
+      window.location.href = `webcal://${host}${port ? `:${port}` : ""}/cal/${data.id}.ics`;
 
-      setMessage(`✅ Kalender erfolgreich erstellt! (${webcalUrl})`);
+      setMessage("✅ Kalender erfolgreich erstellt!");
     } catch (err: any) {
       setMessage(err.message.includes("Failed to fetch")
         ? "❌ Server nicht erreichbar."
@@ -62,7 +64,9 @@ export default function WechselmodellCalendarGenerator() {
     >
       <Card sx={{ width: "100%", maxWidth: 400, p: 2 }}>
         <CardContent>
-          <Typography variant="h5" mb={2}>Wechselmodell Kalender</Typography>
+          <Typography variant="h5" mb={2} align="center">
+            Wechselmodell Kalender
+          </Typography>
 
           <TextField
             label="Startdatum"
@@ -95,12 +99,12 @@ export default function WechselmodellCalendarGenerator() {
           </TextField>
 
           <TextField
-            label="Kalender-ID (optional)"
+            label="Kalendername (optional)"
             value={calendarId}
             onChange={(e) => setCalendarId(e.target.value)}
             fullWidth
             margin="normal"
-            helperText="Name für die ICS-Datei / Kalendername, z.B. motti"
+            helperText="z. B. motti – wird als Kalendername angezeigt"
           />
 
           <Button
@@ -119,7 +123,8 @@ export default function WechselmodellCalendarGenerator() {
               sx={{
                 mt: 2,
                 fontWeight: "bold",
-                color: message.startsWith("❌") ? "red" : "green"
+                color: message.startsWith("❌") ? "red" : "green",
+                textAlign: "center"
               }}
             >
               {message}
