@@ -11,20 +11,21 @@ const port = process.env.PORT || 3001;
 
 app.use(express.json());
 
-// Pfad zum cal-Ordner
+// --------------------
+// Ordner für ICS-Dateien
+// --------------------
 const calFolder = path.join(__dirname, "cal");
-
-// Ordner existiert? Wenn nicht, anlegen
 if (!fs.existsSync(calFolder)) fs.mkdirSync(calFolder);
 
+// --------------------
 // Hilfsfunktion: ICS-Datei generieren
+// --------------------
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
 
   let events = "";
   let currentStart = new Date(start);
-
   let currentType = startWith;
 
   intervalArray.forEach((days, index) => {
@@ -43,12 +44,11 @@ DTEND:${endStr}
 END:VEVENT
 `;
 
-    // für nächste Runde
     currentStart = new Date(endDate);
     currentType = currentType === "Daniel" ? "Zuhause" : "Daniel";
   });
 
-  const icsContent = `
+  return `
 BEGIN:VCALENDAR
 VERSION:2.0
 CALSCALE:GREGORIAN
@@ -56,8 +56,6 @@ PRODID:-//Wechselmodell//Calendar//DE
 ${events}
 END:VCALENDAR
   `.trim();
-
-  return icsContent;
 }
 
 // --------------------
@@ -71,7 +69,6 @@ app.post("/api/createCalendar", (req, res) => {
   }
 
   const id = calendarId && calendarId.trim() !== "" ? calendarId.trim() : Math.random().toString(36).substring(2, 12);
-
   const icsContent = generateICS({ startDate, intervals, startWith, calendarName: id });
 
   const icsPath = path.join(calFolder, `${id}.ics`);
@@ -84,17 +81,20 @@ app.post("/api/createCalendar", (req, res) => {
 });
 
 // --------------------
-// Produktion: statische Dateien aus dist ausliefern
+// Produktion: React ausliefern
 // --------------------
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "dist");
+
+  // Statische Dateien
   app.use(express.static(distPath));
 
-  app.get("*", (req, res) => {
+  // React-Router Fallback
+  app.use((req, res, next) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 } else {
-  console.log("Entwicklung: Bitte separat Vite dev server starten (npm run dev)");
+  console.log("Entwicklung: bitte separat Vite dev server starten (npm run dev)");
 }
 
 // --------------------
