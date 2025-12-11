@@ -20,6 +20,8 @@ export default function WechselmodellCalendarGenerator() {
     const body: any = { startDate, intervals: intervalString, startWith: startType };
     if (calendarId.trim() !== "") body.calendarId = calendarId.trim();
 
+    console.log("POST Body:", body); // zum Debuggen
+
     try {
       const res = await fetch("/api/createCalendar", {
         method: "POST",

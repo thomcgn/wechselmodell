@@ -67,7 +67,7 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  // Name verwenden, sonst zufällig
+  // Kalendername verwenden, sonst zufällig
   const id =
     calendarId && calendarId.trim() !== ""
       ? sanitizeFilename(calendarId)
@@ -77,7 +77,7 @@ app.post("/api/createCalendar", (req, res) => {
   const icsPath = path.join(calFolder, `${id}.ics`);
   fs.writeFileSync(icsPath, icsContent, "utf-8");
 
-  console.log(`ICS-Datei erstellt: ${id}.ics`); // Log für Kontrolle
+  console.log(`ICS-Datei erstellt: ${id}.ics`);
 
   res.json({
     id,
