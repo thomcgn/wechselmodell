@@ -15,12 +15,12 @@ app.use(express.json());
 const calFolder = path.join(__dirname, "cal");
 if (!fs.existsSync(calFolder)) fs.mkdirSync(calFolder);
 
-// Hilfsfunktion: sichere Dateinamen
+// **Dateiname sicher machen**
 function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// ICS-Generator
+// **ICS Generator**
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -54,12 +54,17 @@ BEGIN:VCALENDAR
 VERSION:2.0
 CALSCALE:GREGORIAN
 PRODID:-//Wechselmodell//Calendar//DE
+X-WR-CALNAME:${calendarName}
+X-WR-CALDESC:Wechselmodell Kalender "${calendarName}"
+X-WR-TIMEZONE:Europe/Berlin
 ${events}
 END:VCALENDAR
   `.trim();
 }
 
-// API Endpoint
+// ======================
+// API ENDPOINT
+// ======================
 app.post("/api/createCalendar", (req, res) => {
   const { startDate, intervals, startWith, calendarId } = req.body;
 
@@ -67,13 +72,19 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  // Kalendername verwenden, sonst zufällig
+  // Nutzerdefinierte Kalender-ID → Dateiname übernehmen
   const id =
     calendarId && calendarId.trim() !== ""
-      ? sanitizeFilename(calendarId)
+      ? sanitizeFilename(calendarId.trim())
       : Math.random().toString(36).substring(2, 12);
 
-  const icsContent = generateICS({ startDate, intervals, startWith, calendarName: id });
+  const icsContent = generateICS({
+    startDate,
+    intervals,
+    startWith,
+    calendarName: id,
+  });
+
   const icsPath = path.join(calFolder, `${id}.ics`);
   fs.writeFileSync(icsPath, icsContent, "utf-8");
 
@@ -85,17 +96,21 @@ app.post("/api/createCalendar", (req, res) => {
   });
 });
 
-// React Production
+// ======================
+// STATIC + REACT FALLBACK
+// ======================
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "dist");
-  app.use(express.static(distPath));
 
-  // React-Router Fallback
-  app.use((req, res) => {
+  app.use(express.static(distPath));
+  app.use("/cal", express.static(calFolder)); // wichtig!
+
+  // React Router Fallback
+  app.get("*", (req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 } else {
-  console.log("Entwicklung: bitte separat Vite dev server starten (npm run dev)");
+  console.log("Entwicklung: bitte Vite Dev Server starten");
 }
 
 app.listen(port, () => {
