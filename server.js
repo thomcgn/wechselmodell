@@ -9,7 +9,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3001;
 
-// JSON Body Parser
 app.use(express.json());
 
 // Ordner für ICS-Dateien
@@ -68,6 +67,7 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
+  // Kalendername priorisiert: Frontend-Wert oder zufällig
   const id =
     calendarId && calendarId.trim() !== ""
       ? sanitizeFilename(calendarId)
@@ -85,7 +85,7 @@ app.post("/api/createCalendar", (req, res) => {
   });
 });
 
-// ICS-Dateien ausliefern
+// Endpoint zum Ausliefern der ICS-Dateien
 app.get("/cal/:filename.ics", (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(calFolder, `${filename}.ics`);
@@ -111,6 +111,7 @@ if (process.env.NODE_ENV === "production") {
   console.log("Entwicklung: bitte separat Vite dev server starten (npm run dev)");
 }
 
+// Server starten
 app.listen(port, () => {
   console.log(`Server läuft auf Port ${port}, NODE_ENV=${process.env.NODE_ENV}`);
 });
