@@ -20,7 +20,7 @@ function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// ICS-Generator
+// ICS-Generator mit korrektem iOS-Kalendernamen
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -36,28 +36,30 @@ function generateICS({ startDate, intervals, startWith, calendarName }) {
     const startStr = currentStart.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
     const endStr = endDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
-    events += `
-BEGIN:VEVENT
-UID:${calendarName}-${index}@wechselmodell
-SUMMARY:Wechselmodell - ${currentType}
-DTSTART:${startStr}
-DTEND:${endStr}
-END:VEVENT
-`;
+    events += [
+      "BEGIN:VEVENT",
+      `UID:${calendarName}-${index}@wechselmodell`,
+      `SUMMARY:Wechselmodell - ${currentType}`,
+      `DTSTART:${startStr}`,
+      `DTEND:${endStr}`,
+      "END:VEVENT"
+    ].join("\r\n") + "\r\n";
 
     currentStart = new Date(endDate);
     currentType = currentType === "Daniel" ? "Zuhause" : "Daniel";
   });
 
-  return `
-BEGIN:VCALENDAR
-VERSION:2.0
-CALSCALE:GREGORIAN
-PRODID:-//Wechselmodell//Calendar//DE
-X-WR-CALNAME:${calendarName}   # <-- wichtig für iOS
-${events}
-END:VCALENDAR
-  `.trim();
+  const icsLines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    "PRODID:-//Wechselmodell//Calendar//DE",
+    `X-WR-CALNAME:${calendarName}`, // Name für iOS
+    events.trim(),
+    "END:VCALENDAR"
+  ];
+
+  return icsLines.join("\r\n");
 }
 
 // API Endpoint
