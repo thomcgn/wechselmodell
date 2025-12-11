@@ -1,17 +1,16 @@
 import { useState } from "react";
+import { Box, Card, CardContent, TextField, MenuItem, Button, Typography } from "@mui/material";
+import "./WechselmodellCalendarGenerator.css";
 
 export default function WechselmodellCalendarGenerator() {
   const [intervalString, setIntervalString] = useState("2-3-2");
   const [startType, setStartType] = useState("Daniel");
   const [startDate, setStartDate] = useState("");
-  const [calendarId, setCalendarId] = useState(""); // optional
-  const [message, setMessage] = useState(""); // Feedback
-  const [loading, setLoading] = useState(false); // Ladezustand
+  const [calendarId, setCalendarId] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Prüft, ob Intervalle korrekt sind: nur Zahlen getrennt durch Bindestrich
   const isIntervalValid = (str: string) => /^(\d+-)*\d+$/.test(str);
-
-  // Button aktivieren nur, wenn Datum gewählt + Intervalle gültig
   const canSubmit = startDate !== "" && isIntervalValid(intervalString) && !loading;
 
   const generateICS = async () => {
@@ -27,16 +26,8 @@ export default function WechselmodellCalendarGenerator() {
     setLoading(true);
     setMessage("⏳ Erstelle Kalender...");
 
-    const body: any = {
-      startDate,
-      intervals: intervalString,
-      startWith: startType,
-    };
-
-    // optional manuelle Kalender-ID übergeben
-    if (calendarId.trim() !== "") {
-      body.calendarId = calendarId.trim();
-    }
+    const body: any = { startDate, intervals: intervalString, startWith: startType };
+    if (calendarId.trim() !== "") body.calendarId = calendarId.trim();
 
     try {
       const res = await fetch("/api/createCalendar", {
@@ -45,91 +36,93 @@ export default function WechselmodellCalendarGenerator() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        throw new Error(`Fehler beim Erstellen des Kalenders (${res.status})`);
-      }
-
+      if (!res.ok) throw new Error(`Fehler beim Erstellen des Kalenders (${res.status})`);
       const data = await res.json();
 
-      // iPhone abonnieren
       const host = window.location.hostname;
-      const port = window.location.port; // z. B. 80 oder 443
+      const port = window.location.port;
       window.location.href = `webcal://${host}${port ? `:${port}` : ""}/cal/${data.id}.ics`;
 
       setMessage("✅ Kalender erfolgreich erstellt!");
     } catch (err: any) {
-      if (err.message.includes("Failed to fetch")) {
-        setMessage("❌ Server nicht erreichbar. Bitte prüfe, ob der Backend-Server läuft.");
-      } else {
-        setMessage(`❌ ${err.message}`);
-      }
+      setMessage(err.message.includes("Failed to fetch")
+        ? "❌ Server nicht erreichbar."
+        : `❌ ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: "0 auto", fontFamily: "sans-serif" }}>
-      <h2>Wechselmodell Kalender</h2>
+    <Box className="calendar-container">
+      <Card className="calendar-card">
+        <CardContent>
+          <Typography variant="h5" align="center" gutterBottom>
+            Wechselmodell Kalender
+          </Typography>
 
-      <label>
-        Startdatum:
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          style={{ display: "block", marginBottom: 10 }}
-        />
-      </label>
+          <TextField
+            label="Startdatum"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            margin="normal"
+          />
 
-      <label>
-        Intervalle:
-        <input
-          value={intervalString}
-          onChange={(e) => setIntervalString(e.target.value)}
-          style={{ display: "block", marginBottom: 10 }}
-        />
-      </label>
+          <TextField
+            label="Intervalle"
+            value={intervalString}
+            onChange={(e) => setIntervalString(e.target.value)}
+            placeholder="z. B. 2-3-2"
+            fullWidth
+            margin="normal"
+            error={intervalString !== "" && !isIntervalValid(intervalString)}
+          />
 
-      <label>
-        Start mit:
-        <select
-          value={startType}
-          onChange={(e) => setStartType(e.target.value)}
-          style={{ display: "block", marginBottom: 10 }}
-        >
-          <option>Daniel</option>
-          <option>Zuhause</option>
-        </select>
-      </label>
+          <TextField
+            select
+            label="Start mit"
+            value={startType}
+            onChange={(e) => setStartType(e.target.value)}
+            fullWidth
+            margin="normal"
+          >
+            <MenuItem value="Daniel">Daniel</MenuItem>
+            <MenuItem value="Zuhause">Zuhause</MenuItem>
+          </TextField>
 
-      <label>
-        Kalender-ID (optional, für Teilen):
-        <input
-          value={calendarId}
-          onChange={(e) => setCalendarId(e.target.value)}
-          placeholder="z. B. daniel-zuhause"
-          style={{ display: "block", marginBottom: 10 }}
-        />
-      </label>
+          <TextField
+            label="Kalender-ID (optional)"
+            value={calendarId}
+            onChange={(e) => setCalendarId(e.target.value)}
+            placeholder="z. B. daniel-zuhause"
+            fullWidth
+            margin="normal"
+          />
 
-      <button
-        onClick={generateICS}
-        disabled={!canSubmit}
-        style={{
-          padding: "8px 16px",
-          cursor: canSubmit ? "pointer" : "not-allowed",
-          marginBottom: 10,
-        }}
-      >
-        {loading ? "Erstelle..." : "Abonnieren"}
-      </button>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={generateICS}
+            disabled={!canSubmit}
+            className="calendar-button"
+          >
+            {loading ? "Erstelle..." : "Abonnieren"}
+          </Button>
 
-      {message && (
-        <p style={{ fontWeight: "bold", color: message.startsWith("❌") ? "red" : "green" }}>
-          {message}
-        </p>
-      )}
-    </div>
+          {message && (
+            <Typography
+              align="center"
+              className={`calendar-message ${message.startsWith("❌") ? "error" : "success"}`}
+            >
+              {message}
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
