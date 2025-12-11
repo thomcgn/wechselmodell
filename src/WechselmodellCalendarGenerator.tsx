@@ -33,6 +33,7 @@ export default function WechselmodellCalendarGenerator() {
       const host = window.location.hostname;
       const port = window.location.port;
 
+      // Webcal-Link direkt öffnen
       window.location.href = `webcal://${host}${port ? `:${port}` : ""}/cal/${data.id}.ics`;
 
       setMessage("✅ Kalender erfolgreich erstellt!");

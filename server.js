@@ -11,13 +11,16 @@ const port = process.env.PORT || 3001;
 
 app.use(express.json());
 
+// Ordner für ICS-Dateien
 const calFolder = path.join(__dirname, "cal");
 if (!fs.existsSync(calFolder)) fs.mkdirSync(calFolder);
 
+// Hilfsfunktion: sichere Dateinamen
 function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
+// ICS-Generator
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -56,6 +59,7 @@ END:VCALENDAR
   `.trim();
 }
 
+// API Endpoint
 app.post("/api/createCalendar", (req, res) => {
   const { startDate, intervals, startWith, calendarId } = req.body;
 
@@ -63,16 +67,17 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  const idRaw =
+  // Name verwenden, sonst zufällig
+  const id =
     calendarId && calendarId.trim() !== ""
-      ? calendarId.trim()
+      ? sanitizeFilename(calendarId)
       : Math.random().toString(36).substring(2, 12);
 
-  const id = sanitizeFilename(idRaw);
   const icsContent = generateICS({ startDate, intervals, startWith, calendarName: id });
-
   const icsPath = path.join(calFolder, `${id}.ics`);
   fs.writeFileSync(icsPath, icsContent, "utf-8");
+
+  console.log(`ICS-Datei erstellt: ${id}.ics`); // Log für Kontrolle
 
   res.json({
     id,
@@ -80,12 +85,12 @@ app.post("/api/createCalendar", (req, res) => {
   });
 });
 
-// --------------------
-// React production
-// --------------------
+// React Production
 if (process.env.NODE_ENV === "production") {
   const distPath = path.join(__dirname, "dist");
   app.use(express.static(distPath));
+
+  // React-Router Fallback
   app.use((req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
