@@ -20,7 +20,7 @@ function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// ICS-Generator
+// ICS-Generator mit sichtbarem Kalendernamen
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -54,6 +54,7 @@ BEGIN:VCALENDAR
 VERSION:2.0
 CALSCALE:GREGORIAN
 PRODID:-//Wechselmodell//Calendar//DE
+X-WR-CALNAME:${calendarName}  // <-- sichtbar im Kalender
 ${events}
 END:VCALENDAR
   `.trim();
@@ -67,7 +68,7 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  // Kalendername priorisiert: Frontend-Wert oder zufällig
+  // Kalendername / Dateiname
   const id =
     calendarId && calendarId.trim() !== ""
       ? sanitizeFilename(calendarId)
