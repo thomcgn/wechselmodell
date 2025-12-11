@@ -20,7 +20,7 @@ function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// ICS-Generator mit sichtbarem Kalendernamen
+// ICS-Generator
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -54,13 +54,13 @@ BEGIN:VCALENDAR
 VERSION:2.0
 CALSCALE:GREGORIAN
 PRODID:-//Wechselmodell//Calendar//DE
-X-WR-CALNAME:${calendarName}  // <-- sichtbar im Kalender
+X-WR-CALNAME:${calendarName}   # <-- wichtig für iOS
 ${events}
 END:VCALENDAR
   `.trim();
 }
 
-// API Endpoint: Kalender erstellen
+// API Endpoint
 app.post("/api/createCalendar", (req, res) => {
   const { startDate, intervals, startWith, calendarId } = req.body;
 
@@ -68,7 +68,7 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  // Kalendername / Dateiname
+  // Kalendername verwenden, sonst zufällig
   const id =
     calendarId && calendarId.trim() !== ""
       ? sanitizeFilename(calendarId)
@@ -82,21 +82,8 @@ app.post("/api/createCalendar", (req, res) => {
 
   res.json({
     id,
-    url: `https://${req.hostname}/cal/${id}.ics`,
+    url: `https://tildi.witchplease.de/cal/${id}.ics`,
   });
-});
-
-// Endpoint zum Ausliefern der ICS-Dateien
-app.get("/cal/:filename.ics", (req, res) => {
-  const filename = req.params.filename;
-  const filePath = path.join(calFolder, `${filename}.ics`);
-
-  if (fs.existsSync(filePath)) {
-    res.setHeader("Content-Type", "text/calendar");
-    res.sendFile(filePath);
-  } else {
-    res.status(404).send("Datei nicht gefunden");
-  }
 });
 
 // React Production
@@ -112,7 +99,6 @@ if (process.env.NODE_ENV === "production") {
   console.log("Entwicklung: bitte separat Vite dev server starten (npm run dev)");
 }
 
-// Server starten
 app.listen(port, () => {
   console.log(`Server läuft auf Port ${port}, NODE_ENV=${process.env.NODE_ENV}`);
 });
