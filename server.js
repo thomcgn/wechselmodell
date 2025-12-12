@@ -20,7 +20,7 @@ function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// ICS-Generator mit Emojis
+// ICS-Generator mit Farben und Icons
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -30,26 +30,32 @@ function generateICS({ startDate, intervals, startWith, calendarName }) {
   let currentType = startWith;
 
   intervalArray.forEach((days, index) => {
+    // Enddatum: letzter Tag des Intervalls (inklusive)
     const endDate = new Date(currentStart);
-    endDate.setDate(endDate.getDate() + days);
+    endDate.setDate(endDate.getDate() + days - 1);
 
-    // Datumsformat YYYYMMDD
-    const startStr = currentStart.toISOString().split("T")[0].replace(/-/g, "");
-    const endStr = endDate.toISOString().split("T")[0].replace(/-/g, "");
+    const startStr = currentStart.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const endStr = endDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
-    const emoji = currentType === "Daniel" ? "👨" : "🏠";
+    const emoji = currentType === "Papa" ? "🧑‍🦰" : "👩";
+    const color = currentType === "Papa" ? "BLUE" : "RED";
 
     events += [
       "BEGIN:VEVENT",
       `UID:${calendarName}-${index}@wechselmodell`,
       `SUMMARY:${emoji} ${currentType}`,
-      `DTSTART;VALUE=DATE:${startStr}`,
-      `DTEND;VALUE=DATE:${endStr}`,
+      `DTSTART:${startStr}`,
+      `DTEND:${endStr}`,
+      `CATEGORIES:${currentType}`,
+      `COLOR:${color}`,
       "END:VEVENT"
     ].join("\r\n") + "\r\n";
 
+    // nächster Event beginnt am Tag nach Ende
     currentStart = new Date(endDate);
-    currentType = currentType === "Daniel" ? "Zuhause" : "Daniel";
+    currentStart.setDate(currentStart.getDate() + 1);
+
+    currentType = currentType === "Papa" ? "Mama" : "Papa";
   });
 
   const icsLines = [
@@ -57,7 +63,7 @@ function generateICS({ startDate, intervals, startWith, calendarName }) {
     "VERSION:2.0",
     "CALSCALE:GREGORIAN",
     "PRODID:-//Wechselmodell//Calendar//DE",
-    `X-WR-CALNAME:${calendarName}`, // Kalendername für iOS
+    `X-WR-CALNAME:${calendarName}`,
     ...events.trim().split("\n"),
     "END:VCALENDAR"
   ];
@@ -73,6 +79,7 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
+  // Kalendername verwenden, sonst zufällig
   const id =
     calendarId && calendarId.trim() !== ""
       ? sanitizeFilename(calendarId)
