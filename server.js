@@ -20,7 +20,7 @@ function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// ICS-Generator mit korrektem iOS-Kalendernamen und exakten Intervallen
+// ICS-Generator mit Emojis
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -31,21 +31,24 @@ function generateICS({ startDate, intervals, startWith, calendarName }) {
 
   intervalArray.forEach((days, index) => {
     const endDate = new Date(currentStart);
-    endDate.setDate(endDate.getDate() + days); // DTEND exklusiv
+    endDate.setDate(endDate.getDate() + days);
 
-    const startStr = currentStart.toISOString().split("T")[0].replace(/-/g, "") + "T000000Z";
-    const endStr = endDate.toISOString().split("T")[0].replace(/-/g, "") + "T000000Z";
+    // Datumsformat YYYYMMDD
+    const startStr = currentStart.toISOString().split("T")[0].replace(/-/g, "");
+    const endStr = endDate.toISOString().split("T")[0].replace(/-/g, "");
+
+    const emoji = currentType === "Daniel" ? "👨" : "🏠";
 
     events += [
       "BEGIN:VEVENT",
       `UID:${calendarName}-${index}@wechselmodell`,
-      `SUMMARY:Wechselmodell - ${currentType}`,
-      `DTSTART;VALUE=DATE:${startStr.substring(0,8)}`,
-      `DTEND;VALUE=DATE:${endStr.substring(0,8)}`,
+      `SUMMARY:${emoji} ${currentType}`,
+      `DTSTART;VALUE=DATE:${startStr}`,
+      `DTEND;VALUE=DATE:${endStr}`,
       "END:VEVENT"
     ].join("\r\n") + "\r\n";
 
-    currentStart = new Date(endDate); // nächster Event beginnt am Tag nach aktuellem
+    currentStart = new Date(endDate);
     currentType = currentType === "Daniel" ? "Zuhause" : "Daniel";
   });
 
@@ -55,7 +58,7 @@ function generateICS({ startDate, intervals, startWith, calendarName }) {
     "CALSCALE:GREGORIAN",
     "PRODID:-//Wechselmodell//Calendar//DE",
     `X-WR-CALNAME:${calendarName}`, // Kalendername für iOS
-    events.trim(),
+    ...events.trim().split("\n"),
     "END:VCALENDAR"
   ];
 
@@ -70,7 +73,6 @@ app.post("/api/createCalendar", (req, res) => {
     return res.status(400).json({ error: "Fehlende Daten" });
   }
 
-  // Kalendername verwenden, sonst zufällig
   const id =
     calendarId && calendarId.trim() !== ""
       ? sanitizeFilename(calendarId)
