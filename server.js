@@ -20,7 +20,7 @@ function sanitizeFilename(name) {
   return name.replace(/[^a-zA-Z0-9-_]/g, "-");
 }
 
-// ICS-Generator mit korrektem iOS-Kalendernamen
+// ICS-Generator mit korrektem iOS-Kalendernamen und exakten Intervallen
 function generateICS({ startDate, intervals, startWith, calendarName }) {
   const start = new Date(startDate);
   const intervalArray = intervals.split("-").map(Number);
@@ -31,33 +31,33 @@ function generateICS({ startDate, intervals, startWith, calendarName }) {
 
   intervalArray.forEach((days, index) => {
     const endDate = new Date(currentStart);
-    endDate.setDate(endDate.getDate() + days);
+    endDate.setDate(endDate.getDate() + days); // DTEND exklusiv
 
-    const startStr = currentStart.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-    const endStr = endDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const startStr = currentStart.toISOString().split("T")[0].replace(/-/g, "") + "T000000Z";
+    const endStr = endDate.toISOString().split("T")[0].replace(/-/g, "") + "T000000Z";
 
     events += [
       "BEGIN:VEVENT",
       `UID:${calendarName}-${index}@wechselmodell`,
       `SUMMARY:Wechselmodell - ${currentType}`,
-      `DTSTART:${startStr}`,
-      `DTEND:${endStr}`,
+      `DTSTART;VALUE=DATE:${startStr.substring(0,8)}`,
+      `DTEND;VALUE=DATE:${endStr.substring(0,8)}`,
       "END:VEVENT"
     ].join("\r\n") + "\r\n";
 
-    currentStart = new Date(endDate);
+    currentStart = new Date(endDate); // nächster Event beginnt am Tag nach aktuellem
     currentType = currentType === "Daniel" ? "Zuhause" : "Daniel";
   });
 
   const icsLines = [
-  "BEGIN:VCALENDAR",
-  "VERSION:2.0",
-  "CALSCALE:GREGORIAN",
-  "PRODID:-//Wechselmodell//Calendar//DE",
-  `X-WR-CALNAME:${calendarName}`, // Kalendername direkt hier
-  ...events.trim().split("\n"),   // jede Event-Zeile als eigene Zeile
-  "END:VCALENDAR"
-];
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    "PRODID:-//Wechselmodell//Calendar//DE",
+    `X-WR-CALNAME:${calendarName}`, // Kalendername für iOS
+    events.trim(),
+    "END:VCALENDAR"
+  ];
 
   return icsLines.join("\r\n");
 }
