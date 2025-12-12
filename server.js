@@ -50,14 +50,14 @@ function generateICS({ startDate, intervals, startWith, calendarName }) {
   });
 
   const icsLines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "CALSCALE:GREGORIAN",
-    "PRODID:-//Wechselmodell//Calendar//DE",
-    `X-WR-CALNAME:${calendarName}`, // Name für iOS
-    events.trim(),
-    "END:VCALENDAR"
-  ];
+  "BEGIN:VCALENDAR",
+  "VERSION:2.0",
+  "CALSCALE:GREGORIAN",
+  "PRODID:-//Wechselmodell//Calendar//DE",
+  `X-WR-CALNAME:${calendarName}`, // Kalendername direkt hier
+  ...events.trim().split("\n"),   // jede Event-Zeile als eigene Zeile
+  "END:VCALENDAR"
+];
 
   return icsLines.join("\r\n");
 }
