@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { Box, Card, CardContent, TextField, MenuItem, Button, Typography } from "@mui/material";
+import { 
+  Box, Card, CardContent, TextField, MenuItem, Button, Typography, ListItemIcon, ListItemText 
+} from "@mui/material";
+import MaleIcon from '@mui/icons-material/Man';
+import FemaleIcon from '@mui/icons-material/Woman';
 
 export default function WechselmodellCalendarGenerator() {
   const [intervalString, setIntervalString] = useState("2-3-2");
-  const [startType, setStartType] = useState("Daniel");
+  const [startType, setStartType] = useState("Papa");
   const [startDate, setStartDate] = useState("");
   const [calendarId, setCalendarId] = useState(""); // optional
   const [message, setMessage] = useState("");
@@ -17,13 +21,12 @@ export default function WechselmodellCalendarGenerator() {
     setLoading(true);
     setMessage("⏳ Erstelle Kalender...");
 
-    // Body für POST
     const body: any = {
       startDate,
       intervals: intervalString,
       startWith: startType,
-      calendarId: calendarId.trim() !== "" ? calendarId.trim() : undefined
     };
+    if (calendarId.trim() !== "") body.calendarId = calendarId.trim();
 
     try {
       const res = await fetch("/api/createCalendar", {
@@ -38,7 +41,7 @@ export default function WechselmodellCalendarGenerator() {
       const host = window.location.hostname;
       const port = window.location.port;
 
-      // Webcal-Link öffnen
+      // Webcal-Link direkt öffnen
       window.location.href = `webcal://${host}${port ? `:${port}` : ""}/cal/${data.id}.ics`;
 
       setMessage("✅ Kalender erfolgreich erstellt!");
@@ -94,8 +97,14 @@ export default function WechselmodellCalendarGenerator() {
             fullWidth
             margin="normal"
           >
-            <MenuItem value="Daniel">Daniel</MenuItem>
-            <MenuItem value="Zuhause">Zuhause</MenuItem>
+            <MenuItem value="Papa">
+              <ListItemIcon><MaleIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Papa</ListItemText>
+            </MenuItem>
+            <MenuItem value="Mama">
+              <ListItemIcon><FemaleIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Mama</ListItemText>
+            </MenuItem>
           </TextField>
 
           <TextField
